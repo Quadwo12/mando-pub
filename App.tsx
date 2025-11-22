@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   ShoppingCart, 
   Trash2, 
@@ -9,6 +9,7 @@ import {
   Plus,
   Minus,
   LayoutDashboard,
+  Edit,
   Store
 } from 'lucide-react';
 import { InventoryCard } from './components/InventoryCard';
@@ -18,6 +19,54 @@ import { Dashboard } from './components/Dashboard';
 import { SAMPLE_INVENTORY, INITIAL_PROMOTIONS, CURRENCY_SYMBOL } from './constants';
 import { InventoryItem, CartItem, AuditLogEntry, ViewState } from './types';
 import { generateUpsellSuggestions } from './services/geminiService';
+
+// --- Helper Component for Price Editing ---
+interface PriceInputProps {
+  value: number;
+  onChange: (val: number) => void;
+  className?: string;
+}
+
+const PriceInput: React.FC<PriceInputProps> = ({ value, onChange, className }) => {
+  const [localValue, setLocalValue] = useState(value.toString());
+
+  useEffect(() => {
+    const currentParsed = localValue === '' ? 0 : parseFloat(localValue);
+    // Only update local state if the parent value differs from our current parsed input.
+    // This preserves intermediate states like "10." or empty string while typing.
+    if (currentParsed !== value) {
+       setLocalValue(value.toString());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]); 
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = e.target.value;
+    setLocalValue(newVal);
+    
+    if (newVal === '') {
+      onChange(0);
+      return;
+    }
+    
+    const parsed = parseFloat(newVal);
+    if (!isNaN(parsed)) {
+      onChange(parsed);
+    }
+  };
+
+  return (
+    <input
+      type="number"
+      min="0"
+      step="0.01"
+      className={className}
+      value={localValue}
+      onChange={handleChange}
+      onFocus={(e) => e.target.select()}
+    />
+  );
+};
 
 export default function App() {
   // --- State ---
@@ -263,13 +312,10 @@ export default function App() {
                                     <span className="text-gray-400 text-xs font-medium">@</span>
                                     <div className="relative group/price">
                                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 font-mono text-xs pointer-events-none">{CURRENCY_SYMBOL}</span>
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        className="w-20 pl-5 pr-1 py-1 text-right font-mono font-bold text-gray-800 bg-transparent hover:bg-gray-50 focus:bg-indigo-50 rounded border border-transparent hover:border-gray-200 focus:border-indigo-300 focus:outline-none transition-all text-sm"
+                                      <PriceInput
                                         value={item.price}
-                                        onChange={(e) => updatePrice(item.id, parseFloat(e.target.value) || 0)}
+                                        onChange={(val) => updatePrice(item.id, val)}
+                                        className="w-20 pl-5 pr-1 py-1 text-right font-mono font-bold text-gray-800 bg-transparent hover:bg-gray-50 focus:bg-indigo-50 rounded border border-transparent hover:border-gray-200 focus:border-indigo-300 focus:outline-none transition-all text-sm"
                                       />
                                     </div>
                                  </div>
