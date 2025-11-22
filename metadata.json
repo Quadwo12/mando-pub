@@ -1,0 +1,5 @@
+{
+  "name": "SwiftPOS Web",
+  "description": "A modern, React-based Point of Sale application replicating SwiftUI logic with added Gemini AI-powered sales insights and upsell suggestions.",
+  "requestFramePermissions": []
+}
